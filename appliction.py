@@ -198,11 +198,6 @@ def catalogJSON():
 
     return jsonify(dic)
 
-def getItem(category):
-    item = session.query(Items).filter_by(category_id=category.id).all()
-    return jsonify(item=[i.serialize for i in item])
-
-
 @app.route('/')
 @app.route('/catalog')
 def Home():
