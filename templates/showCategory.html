@@ -1,0 +1,21 @@
+{% extends "main.html" %}
+{% block content %}
+      <div class="home">
+        <div class="category">
+        {% for i in category %}
+        <p>
+        <a href="{{url_for('showCategory', id = i.name )}}"> {{i.name}} </a>
+        </p>
+        {% endfor %}
+        </div>
+        <div class="items">
+          <h3> {{categoryName}} items </h3>
+          {% for j in items %}
+          <p>
+          <a href="{{url_for('showItem', category = categoryName , item = j.name )}}"> {{j.name}} </a>
+          </p>
+          {% endfor %}
+          <a href="{{url_for('Home')}}">Back To display all items</a>
+        </div>
+    </div>
+{% endblock %}

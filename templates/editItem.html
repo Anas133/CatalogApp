@@ -1,0 +1,24 @@
+{% extends "main.html" %}
+{% block content %}
+    <form action="{{url_for('EditItem', category = category , item = item.name )}}" method="post">
+      <div class="newItem">
+      <p> item name:
+        <br><input type="text" name="name" placeholder="{{item.name}}">
+      </p>
+      <p>item description:
+      <br><textarea name="description" rows="8" cols="80"> {{item.description}}</textarea>
+      </p>
+      <select name="category">
+        {% for i in AllCategory %}
+        {% if item.category_id == i.id %}
+        <option value="{{i.name}}" selected>{{i.name}}</option>
+        {% else %}
+        <option value="{{i.name}}">{{i.name}}</option>
+        {% endif %}
+        {% endfor %}
+      </select>
+      <br>
+      <input type="submit" value="Submit">
+      </div>
+    </form>
+{% endblock %}

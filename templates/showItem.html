@@ -1,0 +1,13 @@
+{% extends "main.html" %}
+{% block content %}
+    <div class="text">
+      <h3> {{item.name}} </h3>
+      <h4>Description: {{item.description}}</h4>
+      <a href="{{url_for('EditItem', category = category.name , item = item.name )}}">Edit</a>
+      <label> | </label>
+      <a href="{{url_for('DeleteItem', category = category.name , item = item.name )}}">Delete</a>
+      <label> | </label>
+      <a href="{{url_for('Home')}}">Back Home page</a>
+    </div>
+
+{% endblock %}
