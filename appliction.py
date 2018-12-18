@@ -1,6 +1,12 @@
 # python 3.7
 
-from flask import Flask, render_template, request, redirect, jsonify, url_for, flash
+from flask import (Flask,
+                   render_template,
+                   request,
+                   redirect,
+                   jsonify,
+                   url_for,
+                   flash)
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
 from database_setup import Base, Category, Items, User
@@ -28,13 +34,14 @@ session = DBSession()
 CLIENT_ID = json.loads(
     open('client_secrets.json', 'r').read())['web']['client_id']
 
-# backref <-- for API endpoint
+
 @app.route('/login')
 def showLogin():
     state = ''.join(random.choice(string.ascii_uppercase + string.digits)
                     for x in range(32))
     login_session['state'] = state
     return render_template('login.html', STATE=state)
+
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
@@ -89,7 +96,8 @@ def gconnect():
     stored_access_token = login_session.get('access_token')
     stored_gplus_id = login_session.get('gplus_id')
     if stored_access_token is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'),
+        response = make_response(json.dumps(
+                                'Current user is already connected.'),
                                  200)
         response.headers['Content-Type'] = 'application/json'
         return response
@@ -123,7 +131,9 @@ def gconnect():
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    output += '''" style = "width: 300px;
+     height: 300px;border-radius: 150px;-webkit-border-radius: 150px;
+     -moz-border-radius: 150px;"> '''
     flash("you are now logged in as %s" % login_session['username'])
     print ("done!")
     return output
@@ -149,7 +159,7 @@ def getUserID(email):
     try:
         user = session.query(User).filter_by(email=email).one()
         return user.id
-    except:
+    except Exception:
         return None
 
 # DISCONNECT - Revoke a current user's token and reset their login_session
@@ -175,84 +185,82 @@ def gdisconnect():
         del login_session['username']
         del login_session['email']
         del login_session['user_id']
-        #return response
         return redirect(url_for('Home'))
     else:
-        response = make_response(json.dumps('Failed to revoke token for given user.', 400))
+        response = make_response(json.dumps(
+                        'Failed to revoke token for given user.', 400))
         response.headers['Content-Type'] = 'application/json'
         return response
+
+
 # JSON APIs
 @app.route('/catalog.json')
 def catalogJSON():
-    dic = {}
-    categories = session.query(Category).all()
     item = session.query(Items).all()
-    dic["Category"] = {}
-    dic["Category"]["items"] = {}
-    for i in categories:
-        dic["Category"][i.name] = json.dumps([i.serialize])
-        item = session.query(Items).filter_by(category_id=i.id)
-        for j in item:
-            if i.id == j.category_id:
-                dic["Category"]["items"][j.name] = json.dumps([j.serialize])
+    return jsonify(items=[i.serialize for i in item])
 
-    return jsonify(dic)
 
 @app.route('/')
 @app.route('/catalog')
 def Home():
     category = session.query(Category).all()
     items = session.query(Items).order_by(Items.time.desc()).all()
-    return render_template('Home.html', category=category , items=items)
+    return render_template('Home.html', category=category, items=items)
+
 
 @app.route('/catalog/<id>/items')
 def showCategory(id):
     category = session.query(Category).all()
     category1 = session.query(Category).filter_by(name=id).one()
     items = session.query(Items).filter_by(category_id=category1.id).all()
-    return render_template('showCategory.html' , category=category ,
-                            categoryName=category1.name , items=items)
+    return render_template(
+                'showCategory.html',
+                category=category, categoryName=category1.name, items=items)
+
 
 @app.route('/catalog/<category>/<item>')
-def showItem(category,item):
+def showItem(category, item):
     category = session.query(Category).filter_by(name=category).one()
     item = session.query(Items).filter_by(
            category_id=category.id, name=item).first()
-    return render_template('showItem.html' , category=category , item=item)
+    return render_template('showItem.html', category=category, item=item)
 
-@app.route('/catalog/new' , methods=['GET' , 'POST'])
+
+@app.route('/catalog/new', methods=['GET', 'POST'])
 def NewItem():
     category = session.query(Category).all()
     if 'username' not in login_session:
         return redirect('/login')
     if request.method == 'POST':
         categoryId = session.query(Category).filter_by(
-        name=request.form['category']).one()
+                                          name=request.form['category']).one()
         item = Items(
-        name = request.form['name'],
-        description = request.form['description'],
-        time = str(datetime.now()),
-        category_id = categoryId.id,
-        user_id = login_session['user_id']
+                    name=request.form['name'],
+                    description=request.form['description'],
+                    time=str(datetime.now()),
+                    category_id=categoryId.id,
+                    user_id=login_session['user_id']
         )
         session.add(item)
         session.commit()
         return redirect(url_for('showItem',
-                                category=categoryId.name , item=item.name))
+                                category=categoryId.name, item=item.name))
     else:
-        return render_template('newItem.html', category = category)
+        return render_template('newItem.html', category=category)
 
-@app.route('/catalog/<category>/<item>/edit' , methods=['GET' , 'POST'])
-def EditItem(category,item):
+
+@app.route('/catalog/<category>/<item>/edit', methods=['GET', 'POST'])
+def EditItem(category, item):
     AllCategory = session.query(Category).all()
     category = session.query(Category).filter_by(name=category).one()
     item = session.query(Items).filter_by(
-    category_id=category.id, name=item).one()
+                                category_id=category.id, name=item).one()
     if 'username' not in login_session:
         return redirect('/login')
     if login_session['user_id'] != item.user_id:
         return """<script>function myFunction()
-        {alert('You are not authorized to edit this itme.');}</script
+        {alert('You are not authorized to edit this itme.');
+        window.location.href = '/';}</script
         ><body onload='myFunction()'>"""
     if request.method == 'POST':
         if request.form['name']:
@@ -269,13 +277,15 @@ def EditItem(category,item):
         session.add(item)
         session.commit()
         return redirect(url_for('showItem',
-                        category=NewCategory.name , item=item.name))
+                        category=NewCategory.name, item=item.name))
     else:
-        return render_template('editItem.html', AllCategory=AllCategory ,
-                                category=category.name , item=item)
+        return render_template(
+                'editItem.html',
+                AllCategory=AllCategory, category=category.name, item=item)
 
-@app.route('/catalog/<category>/<item>/delete' , methods=['GET' , 'POST'])
-def DeleteItem(category,item):
+
+@app.route('/catalog/<category>/<item>/delete', methods=['GET', 'POST'])
+def DeleteItem(category, item):
     category = session.query(Category).filter_by(name=category).one()
     item = session.query(Items).filter_by(
             category_id=category.id, name=item).one()
@@ -283,15 +293,16 @@ def DeleteItem(category,item):
         return redirect('/login')
     if login_session['user_id'] != item.user_id:
         return """<script>function myFunction()
-        {alert('You are not authorized to delete this item.');}</script>
+        {alert('You are not authorized to delete this item.');
+        window.location.href = '/';}</script>
         <body onload='myFunction()'>"""
     if request.method == 'POST':
         session.delete(item)
         session.commit()
         return redirect(url_for('showCategory', id=category.name))
     else:
-        return render_template('deleteItem.html',
-                                category=category.name , item=item)
+        return render_template(
+                'deleteItem.html', category=category.name, item=item)
 
 
 if __name__ == '__main__':
